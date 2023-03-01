@@ -5,6 +5,8 @@ import {
     PlusWhite, BoxWrap, BoxWrapper, Wrapper, Box, SubCircle, SubWrap,
     SelectInput, SelectOption, GapErect, InputText
 } from "./Styled.js";
+// import {picManager, Pic, PicManager} from "../../classes/pic";
+import {Pic, PicManager} from "../../classes/pic";
 
 export default class SideBar extends React.Component {
     constructor(props) {
@@ -41,6 +43,16 @@ export default class SideBar extends React.Component {
         this.submitUpload = this.submitUpload.bind(this);
         this.addItemOfInput = this.addItemOfInput.bind(this);
     }
+    picManager = new PicManager();
+    dataURLtoBlob(dataurl) {
+        let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], {type:mime});
+    }
+
     handleSelectedImg(){
         this.btnRef.current.click();
     }
@@ -50,6 +62,22 @@ export default class SideBar extends React.Component {
         const rawImg = imgs[0];
         if(!rawImg) return;
         this.setState({imgUrl: URL.createObjectURL(rawImg)});
+
+        this.picManager.re0();
+        for(let i=0; i<e.target.files.length; i++){
+            const fileReader = new FileReader();
+            let self = this;
+            fileReader.onload = function(res) {
+                const dataUrl = res.currentTarget.result;
+                const newPic = new Pic(dataUrl);
+                newPic.initTags();
+                self.picManager.addPic(newPic);
+            }
+            const file = e.target.files[i];
+            if (!file) continue;
+            this.picManager.addInfo(file.name);
+            fileReader.readAsDataURL(file);
+        }
     }
 
     // Button list
@@ -83,9 +111,10 @@ export default class SideBar extends React.Component {
                             ref={this.btnRef}
                             className={"img-upload-input"}
                             type={"file"}
-                            accept={".png"}
+                            accept={".jpg"}
                             onChange={this.submitUpload}
                             style={{visibility: 'hidden'}}
+                            multiple
                         />
                         <PlusWrap>
                             <Plus/>
@@ -163,7 +192,13 @@ export default class SideBar extends React.Component {
                             )}
                         </BoxWrapper>
                     </Wrapper>
-                    <MainButton>Generate !</MainButton>
+                    <MainButton onClick={() => {
+                        console.log(this.picManager);
+                        for(let i=0; i<this.picManager.getAllPic().length; i++) {
+                            console.log(this.picManager.getAllPic()[i].getTags());
+                            // console.log(picManager.getAllPic()[i].getDataUrl());
+                        }
+                    }}>Generate !</MainButton>
                 </Container>
             </div>
         )
